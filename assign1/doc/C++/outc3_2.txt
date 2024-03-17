@@ -1,0 +1,33 @@
+
+1. Multiplication
+2. Line Multiplication
+3. Block Multiplication
+Selection?: Dimensions: lins=cols ? 10240
+Block Size? 128
+Time: 576.852 seconds
+Result matrix: 
+5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 
+L1 DCM: 151214910546 
+L2 DCM: 502187487465 
+DP OPS: 2147483648001 
+L2 DCR: 39554939756 
+Time: 566.856 seconds
+Result matrix: 
+5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 
+L1 DCM: 150648901550 
+L2 DCM: 502531827597 
+DP OPS: 2147483648001 
+L2 DCR: 45908094689 
+Time: 564.697 seconds
+Result matrix: 
+5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 5.24339e+07 
+L1 DCM: 150647881484 
+L2 DCM: 502798919461 
+DP OPS: 2147483648001 
+L2 DCR: 45938898789 
+
+1. Multiplication
+2. Line Multiplication
+3. Block Multiplication
+Selection?: Dimensions: lins=cols ? 10240
+Block Size? 256
