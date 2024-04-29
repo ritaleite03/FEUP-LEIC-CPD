@@ -14,6 +14,7 @@ public class Player {
     BufferedReader reader;
     int id;
     int ranking;
+    boolean isPlaying = false;
 
     public Player() {
     }
@@ -30,6 +31,7 @@ public class Player {
         if (socket.isClosed())
             return null;
         writer.println(s);
+        writer.println("escreve");
         try {
             String res = reader.readLine();
             if (res != null) {
@@ -37,12 +39,12 @@ public class Player {
             }
         } catch (IOException e) {
         }
-        if (!socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException ex) {
-            }
-        }
+        // if (!socket.isClosed()) {
+        // try {
+        // socket.close();
+        // } catch (IOException ex) {
+        // }
+        // }
         return null;
     }
 

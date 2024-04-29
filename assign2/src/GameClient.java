@@ -10,18 +10,22 @@ public class GameClient {
         int port = Integer.parseInt(args[1]);
 
         try (Socket socket = new Socket(hostname, port)) {
-            socket.close();
-            return;/*
-                    * OutputStream output = socket.getOutputStream();
-                    * PrintWriter writer = new PrintWriter(output, true);
-                    * InputStream input = socket.getInputStream();
-                    * BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                    * BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
-                    * String res = reader.readLine();
-                    * System.out.println(res);
-                    * String in = r.readLine();
-                    * writer.println(in);
-                    */
+            OutputStream output = socket.getOutputStream();
+            PrintWriter writer = new PrintWriter(output, true);
+            InputStream input = socket.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
+            while (true) {
+                String res = reader.readLine();
+                if (res == null)
+                    continue;
+                if (res.equals("escreve")) {
+                    String in = r.readLine();
+                    writer.println(in);
+                } else {
+                    System.out.println(res);
+                }
+            }
 
         } catch (UnknownHostException ex) {
 

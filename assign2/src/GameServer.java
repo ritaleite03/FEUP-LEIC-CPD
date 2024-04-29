@@ -1,17 +1,40 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class GameServer {
-    private List<Socket> userSockets;
+    private static List<Player> players = new ArrayList<>();
+    private static ArrayDeque<Player> waiting = new ArrayDeque<>();
+    private static ReentrantLock lock = new ReentrantLock();
+    private static final int N = 2;
 
-    public GameServer(int players, List<Socket> userSockets) {
-        this.userSockets = userSockets;
-    }
+    public static void addToQueue(Player p) {
+        lock.lock();
+        if (waiting.size() == N - 1) {
+            List<Player> gamePlayers = new ArrayList<>();
+            while (waiting.size() > 0) {
+                gamePlayers.add(waiting.poll());
+            }
+            gamePlayers.add(p);
+            Game game = new Game(gamePlayers);
 
-    public void start() {
-        System.out.println("Starting game vith " + userSockets.size() + " players");
+            new Thread(() -> {
+                for (Player player : gamePlayers) {
+                    player.isPlaying = true;
+                }
+                game.run();
+                for (Player player : gamePlayers) {
+                    player.isPlaying = false;
+                    addToQueue(player);
+                }
+            }).start();
+        } else {
+            waiting.add(p);
+        }
+        lock.unlock();
     }
 
     public static void main(String[] args) {
@@ -27,8 +50,23 @@ public class GameServer {
                 System.out.println("New client connected: ");
                 Player p = new Player();
                 p.connect(socket);
-                System.out.println(p.readLine("ola"));
-                System.out.println(socket.isClosed());
+                String username = p.readLine("Username: ");
+                String password = p.readLine("Password: ");
+                lock.lock();
+                boolean exists = false;
+                for (Player existing : players) {
+                    if (existing.username.equals(username) && existing.password.equals(password)) {
+                        exists = true;
+                        existing.connect(socket);
+                    }
+                }
+                if (!exists) {
+                    p.username = username;
+                    p.password = password;
+                    players.add(p);
+                    addToQueue(p);
+                }
+                lock.unlock();
             }
 
         } catch (IOException ex) {

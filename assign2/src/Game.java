@@ -46,15 +46,14 @@ public class Game {
                         continue;
                     }
                     guessedChars[guessChar - 'A'] = true;
+                    if (mangleWord().equals(word)) {
+                        end(player);
+                        return;
+                    }
                     break;
                 } else {
                     if (guess.equals(word)) {
-                        for (Player p : players) {
-                            p.writeLine("Game end player " + player.getName() + " won!");
-                            if (p != player)
-                                p.loseGame();
-                        }
-                        player.winGame();
+                        end(player);
                         return;
                     } else {
                         break;
@@ -98,5 +97,14 @@ public class Game {
         for (Player p : players) {
             updatePlayer(p);
         }
+    }
+
+    void end(Player winner) {
+        for (Player p : players) {
+            p.writeLine("Game end player " + winner.getName() + " won!");
+            if (p != winner)
+                p.loseGame();
+        }
+        winner.winGame();
     }
 }
