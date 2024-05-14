@@ -12,9 +12,10 @@ public class Player {
     Socket socket;
     PrintWriter writer;
     BufferedReader reader;
-    int id;
-    int ranking;
-    boolean isPlaying = false;
+    int ranking = 500;
+    public long deadSince = -1;
+    public boolean removed = false;
+    public long waitingSince;
 
     public Player() {
     }
@@ -25,6 +26,10 @@ public class Player {
         writer = new PrintWriter(output, true);
         InputStream input = socket.getInputStream();
         reader = new BufferedReader(new InputStreamReader(input));
+    }
+
+    boolean connected() {
+        return !socket.isClosed();
     }
 
     String readLine(String s) {
@@ -39,13 +44,23 @@ public class Player {
             }
         } catch (IOException e) {
         }
-        // if (!socket.isClosed()) {
-        // try {
-        // socket.close();
-        // } catch (IOException ex) {
-        // }
-        // }
+        deadSince = System.currentTimeMillis();
         return null;
+    }
+
+    void ping() {
+        if (deadSince > 0)
+            return;
+        writer.println("ping");
+        try {
+            String res = reader.readLine();
+            if (res != null) {
+                deadSince = -1;
+                return;
+            }
+        } catch (IOException e) {
+        }
+        deadSince = System.currentTimeMillis();
     }
 
     void writeLine(String s) {
@@ -59,11 +74,18 @@ public class Player {
     }
 
     void loseGame() {
-
+        ranking -= 10;
     }
 
     void winGame() {
-
+        ranking += 30;
     }
 
+    boolean inRange(Player other) {
+        return Math.abs(ranking - other.ranking) < Math.min(getRange(), other.getRange());
+    }
+
+    float getRange() {
+        return 50 + (System.currentTimeMillis() - waitingSince) * (10 / 1000);
+    }
 }
