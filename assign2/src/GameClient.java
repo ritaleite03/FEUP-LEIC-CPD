@@ -22,6 +22,8 @@ public class GameClient {
                 if (res.equals("escreve")) {
                     String in = r.readLine();
                     writer.println(in);
+                } else if (res.equals("ping")) {
+                    writer.println("pong");
                 } else {
                     System.out.println(res);
                 }

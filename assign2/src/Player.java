@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Player {
     String username;
@@ -16,57 +17,93 @@ public class Player {
     public long deadSince = -1;
     public boolean removed = false;
     public long waitingSince;
+    private ReentrantLock lock;
 
     public Player() {
+        lock = new ReentrantLock();
     }
 
     public void connect(Socket socket) throws IOException {
-        this.socket = socket;
-        OutputStream output = socket.getOutputStream();
-        writer = new PrintWriter(output, true);
-        InputStream input = socket.getInputStream();
-        reader = new BufferedReader(new InputStreamReader(input));
+        lock.lock();
+        try {
+            this.socket = socket;
+            OutputStream output = socket.getOutputStream();
+            writer = new PrintWriter(output, true);
+            InputStream input = socket.getInputStream();
+            reader = new BufferedReader(new InputStreamReader(input));
+        } finally {
+            lock.unlock();
+        }
     }
 
     boolean connected() {
-        return !socket.isClosed();
+        lock.lock();
+        try {
+            return !socket.isClosed();
+        } finally {
+            lock.unlock();
+        }
     }
 
     String readLine(String s) {
-        if (socket.isClosed())
-            return null;
-        writer.println(s);
-        writer.println("escreve");
+        lock.lock();
         try {
-            String res = reader.readLine();
-            if (res != null) {
-                return res;
+            if (socket.isClosed())
+                return null;
+            writer.println(s);
+            writer.println("escreve");
+            try {
+                String res = reader.readLine();
+                if (res != null) {
+                    return res;
+                }
+            } catch (IOException e) {
             }
-        } catch (IOException e) {
+            deadSince = System.currentTimeMillis();
+            return null;
+        } finally {
+            lock.unlock();
         }
-        deadSince = System.currentTimeMillis();
-        return null;
     }
 
     void ping() {
-        if (deadSince > 0)
-            return;
-        writer.println("ping");
+        lock.lock();
         try {
-            String res = reader.readLine();
-            if (res != null) {
-                deadSince = -1;
+            if (deadSince > 0)
                 return;
+            System.out.println("ping sent to: " + username);
+            socket.setSoTimeout(1 * 1000);
+            writer.println("ping");
+            try {
+                String res = reader.readLine();
+                if (res != null) {
+                    System.out.println("pong received from: " + username);
+                    deadSince = -1;
+                    return;
+                }
+            } catch (IOException e) {
             }
-        } catch (IOException e) {
+            System.out.println("pong not received from: " + username);
+            deadSince = System.currentTimeMillis();
+        } catch (SocketException e) {
+        } finally {
+            try {
+                socket.setSoTimeout(45 * 1000);
+            } catch (SocketException e) {
+            }
+            lock.unlock();
         }
-        deadSince = System.currentTimeMillis();
     }
 
     void writeLine(String s) {
-        if (socket.isClosed())
-            return;
-        writer.println(s);
+        lock.lock();
+        try {
+            if (socket.isClosed())
+                return;
+            writer.println(s);
+        } finally {
+            lock.unlock();
+        }
     }
 
     String getName() {

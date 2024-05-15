@@ -12,14 +12,19 @@ public class GameServer {
 
     public static void addToQueue2(Player p) {
         lock.lock();
+        for (Player waitingP : waiting) {
+            if (waitingP.getName().equals(p.getName()))
+                return;
+        }
         waiting.add(p);
         p.waitingSince = System.currentTimeMillis();
-        // matchMacking();
         lock.unlock();
     }
 
     private static void matchMacking() {
         lock.lock();
+        cleanup();
+
         List<Player> gamePlayers = new ArrayList<>();
         for (Player first : waiting) {
             gamePlayers.clear();
@@ -48,8 +53,7 @@ public class GameServer {
             new Thread(() -> {
                 game.run();
                 for (Player player : gamePlayers) {
-                    if (System.currentTimeMillis() - player.deadSince < 60 * 1000)
-                        addToQueue(player);
+                    addToQueue2(player);
                 }
             }).start();
             matchMacking();
@@ -58,6 +62,7 @@ public class GameServer {
     }
 
     private static void cleanup() {
+        lock.lock();
         List<Player> toDelete = new ArrayList<>();
 
         for (Player waitingP : waiting) {
@@ -68,13 +73,14 @@ public class GameServer {
         for (Player waitingP : toDelete) {
             waiting.remove(waitingP);
         }
+        lock.unlock();
     }
 
     public static void addToQueue(Player p) {
         lock.lock();
         cleanup();
         for (Player waitingP : waiting) {
-            if (waitingP == p)
+            if (waitingP.getName().equals(p.getName()))
                 return;
         }
         if (waiting.size() == N - 1) {
@@ -120,7 +126,7 @@ public class GameServer {
                     matchMacking();
                 }
                 lock.unlock();
-                for (Player p : players) {
+                for (Player p : waiting) {
                     p.ping();
                 }
             }
@@ -139,6 +145,7 @@ public class GameServer {
                 for (Player existing : players) {
                     if (existing.username.equals(username)) {
                         exists = true;
+                        existing.deadSince = -1;
                         if (existing.password.equals(password)) {
                             existing.connect(socket);
                             if (mode == 0)
