@@ -3,11 +3,20 @@ import java.util.Random;
 import java.lang.StringBuilder;
 
 public class Game {
-    String word;
+
+    // Secret word
+    String word; 
+
+    // List of letters guessed or not
     boolean[] guessedChars;
-    int turn;
+
+    // Index of the player playing now
+    int turn; 
+
+    // List of the players
     List<Player> players;
 
+    // List of possible words to guess
     static String[] words = { "APPLE", "BANANA", "CANDLE", "DOLPHIN", "ELEPHANT", "FLOWER", "GUITAR", "HAMMER", "IGLOO",
             "JAGUAR", "KANGAROO", "LEMON", "MONKEY", "NEEDLE", "OCTOPUS", "PENGUIN", "QUILT", "RAINBOW", "SPIDER",
             "TIGER", "UMBRELLA", "VIOLIN", "WATERMELON", "XYLOPHONE", "YAK", "ZEBRA", "ANCHOR", "BUTTERFLY",
@@ -16,8 +25,10 @@ public class Game {
             "TOUCAN", "UNICORN", "VULTURE", "WOLF", "YACHT" };
 
     public Game(List<Player> players) {
+        // Choose random word
         Random rand = new Random();
-        word = words[rand.nextInt(words.length)];
+        this.word = words[rand.nextInt(words.length)];
+        //Initialize list of letters to false
         guessedChars = new boolean['Z' - 'A' + 1];
         for (int i = 0; i < guessedChars.length; i++) {
             guessedChars[i] = false;
@@ -27,28 +38,34 @@ public class Game {
     }
 
     public void run() {
+        // Initializes game for every player
         updatePlayers();
         while (true) {
             Player player = players.get(turn);
             String guess = player.readLine("It's your turn:");
             while (true) {
-                if (guess == null)
-                    break;
-                guess = guess.toUpperCase();
-
+                // If there is no guess then go to the next player
+                if (guess == null) break; 
+                guess = guess.toUpperCase(); 
+                // If guess is a letter
                 if (guess.length() == 1) {
                     char guessChar = guess.charAt(0);
+                    // If char is not a valid letter then try again
                     if ('A' > guessChar || 'Z' < guessChar) {
                         guess = player.readLine("Invalid char, try again:");
                         continue;
                     }
                     guessedChars[guessChar - 'A'] = true;
+                    // If word is complet then end game
                     if (mangleWord().equals(word)) {
                         end(player);
                         return;
                     }
                     break;
-                } else {
+                } 
+                // If guess is a word
+                else {
+                    // If guess is correct then end game
                     if (guess.equals(word)) {
                         end(player);
                         return;
@@ -63,6 +80,7 @@ public class Game {
         }
     }
 
+    // Creates the word mangled
     String mangleWord() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < word.length(); i++) {
@@ -72,8 +90,10 @@ public class Game {
         return sb.toString();
     }
 
+    // Updates the game state for a specific player.
     void updatePlayer(Player player) {
         String mangled = mangleWord();
+        // Create list of guessed letters to print
         StringBuilder sb = new StringBuilder();
         sb.append("Guessed letters: ");
         boolean first = true;
@@ -90,6 +110,7 @@ public class Game {
         player.writeLine(sb.toString());
     }
 
+    // Updates the game state for all players.
     void updatePlayers() {
         for (Player p : players) {
             updatePlayer(p);
