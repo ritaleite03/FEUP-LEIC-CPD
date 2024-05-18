@@ -5,16 +5,18 @@ import java.lang.StringBuilder;
 public class Game {
 
     // Secret word
-    String word; 
+    String word;
 
     // List of letters guessed or not
     boolean[] guessedChars;
 
     // Index of the player playing now
-    int turn; 
+    int turn;
 
     // List of the players
     List<Player> players;
+
+    int skipCount = 0;
 
     // List of possible words to guess
     static String[] words = { "APPLE", "BANANA", "CANDLE", "DOLPHIN", "ELEPHANT", "FLOWER", "GUITAR", "HAMMER", "IGLOO",
@@ -28,7 +30,8 @@ public class Game {
         // Choose random word
         Random rand = new Random();
         this.word = words[rand.nextInt(words.length)];
-        //Initialize list of letters to false
+        System.out.println("new game with word: " + this.word);
+        // Initialize list of letters to false
         guessedChars = new boolean['Z' - 'A' + 1];
         for (int i = 0; i < guessedChars.length; i++) {
             guessedChars[i] = false;
@@ -38,6 +41,9 @@ public class Game {
     }
 
     public void run() {
+        for (Player p : players) {
+            p.isPlaying = true;
+        }
         // Initializes game for every player
         updatePlayers();
         while (true) {
@@ -45,8 +51,18 @@ public class Game {
             String guess = player.readLine("It's your turn:");
             while (true) {
                 // If there is no guess then go to the next player
-                if (guess == null) break; 
-                guess = guess.toUpperCase(); 
+                if (guess == null) {
+                    skipCount++;
+                    System.out.println("skip count: " + skipCount);
+                    if (skipCount == this.players.size()) {
+                        System.out.println("ending game");
+                        end(null);
+                        return;
+                    }
+                    break;
+                }
+                skipCount = 0;
+                guess = guess.toUpperCase();
                 // If guess is a letter
                 if (guess.length() == 1) {
                     char guessChar = guess.charAt(0);
@@ -62,7 +78,7 @@ public class Game {
                         return;
                     }
                     break;
-                } 
+                }
                 // If guess is a word
                 else {
                     // If guess is correct then end game
@@ -119,10 +135,18 @@ public class Game {
 
     void end(Player winner) {
         for (Player p : players) {
-            p.writeLine("Game end player " + winner.getName() + " won!");
-            if (p != winner)
-                p.loseGame();
+            p.isPlaying = false;
+            if (winner != null) {
+                if (p != winner) {
+                    p.writeLine("Game end player " + winner.getName() + " won!");
+                    p.loseGame();
+                } else {
+                    p.writeLine("Game end you won!");
+                    p.winGame();
+                }
+            } else {
+                p.writeLine("Game end all players skipped!");
+            }
         }
-        winner.winGame();
     }
 }
