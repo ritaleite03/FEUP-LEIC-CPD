@@ -41,9 +41,6 @@ public class Game {
     }
 
     public void run() {
-        for (Player p : players) {
-            p.isPlaying = true;
-        }
         // Initializes game for every player
         updatePlayers();
         while (true) {
@@ -64,7 +61,10 @@ public class Game {
                 skipCount = 0;
                 guess = guess.toUpperCase();
                 // If guess is a letter
-                if (guess.length() == 1) {
+                if (guess.length() == 0) {
+                    guess = player.readLine("Invalid guess, try again:");
+                    continue;
+                } else if (guess.length() == 1) {
                     char guessChar = guess.charAt(0);
                     // If char is not a valid letter then try again
                     if ('A' > guessChar || 'Z' < guessChar) {
@@ -81,6 +81,17 @@ public class Game {
                 }
                 // If guess is a word
                 else {
+                    boolean invalid = false;
+                    for (int i = 0; i < word.length(); i++) {
+                        char guessChar = word.charAt(i);
+                        if ('A' > guessChar || 'Z' < guessChar) {
+                            invalid = true;
+                            guess = player.readLine("Invalid guess, try again:");
+                            break;
+                        }
+                    }
+                    if (invalid)
+                        continue;
                     // If guess is correct then end game
                     if (guess.equals(word)) {
                         end(player);
@@ -107,8 +118,8 @@ public class Game {
     }
 
     // Updates the game state for a specific player.
-    void updatePlayer(Player player) {
-        String mangled = mangleWord();
+    void updatePlayer(Player player, boolean mangle) {
+        String mangled = mangle ? mangleWord() : word;
         // Create list of guessed letters to print
         StringBuilder sb = new StringBuilder();
         sb.append("Guessed letters: ");
@@ -126,6 +137,10 @@ public class Game {
         player.writeLine(sb.toString());
     }
 
+    void updatePlayer(Player player) {
+        updatePlayer(player, true);
+    }
+
     // Updates the game state for all players.
     void updatePlayers() {
         for (Player p : players) {
@@ -137,6 +152,7 @@ public class Game {
         for (Player p : players) {
             p.isPlaying = false;
             if (winner != null) {
+                updatePlayer(p, false);
                 if (p != winner) {
                     p.writeLine("Game end player " + winner.getName() + " won!");
                     p.loseGame();

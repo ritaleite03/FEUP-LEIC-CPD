@@ -57,17 +57,6 @@ public class Player {
         }
     }
 
-    // Checks if the player is still connected
-    // NAO SE USA
-    boolean connected() {
-        lock.lock();
-        try {
-            return !socket.isClosed();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     // Sends a message to the player and reads the response
     String readLine(String s) {
         // This ensures that the read/write operation on the socket is thread-safe,
@@ -106,34 +95,36 @@ public class Player {
 
     // Checks the player's connection with a "ping"
     void ping() {
-        lock.lock();
-        try {
-            // System.out.println("ping sent to: " + username);
-            // var range = getRange();
-            // System.out.println(String.format("range: %.2f %.2f", ranking - range, ranking
-            // + range));
-            socket.setSoTimeout(1 * 1000);
-            writer.println("ping");
+        Thread.ofVirtual().start(() -> {
+            lock.lock();
             try {
-                String res = reader.readLine();
-                if (res != null) {
-                    // System.out.println("pong received from: " + username);
-                    deadSince = -1;
-                    return;
+                // System.out.println("ping sent to: " + username);
+                // var range = getRange();
+                // System.out.println(String.format("range: %.2f %.2f", ranking - range, ranking
+                // + range));
+                socket.setSoTimeout(1 * 1000);
+                writer.println("ping");
+                try {
+                    String res = reader.readLine();
+                    if (res != null) {
+                        // System.out.println("pong received from: " + username);
+                        deadSince = -1;
+                        return;
+                    }
+                } catch (IOException e) {
                 }
-            } catch (IOException e) {
-            }
-            // System.out.println("pong not received from: " + username);
-            disconnect();
-        } catch (SocketException e) {
-        } finally {
-            try {
-                if (!socket.isClosed())
-                    socket.setSoTimeout(45 * 1000);
+                // System.out.println("pong not received from: " + username);
+                disconnect();
             } catch (SocketException e) {
+            } finally {
+                try {
+                    if (!socket.isClosed())
+                        socket.setSoTimeout(45 * 1000);
+                } catch (SocketException e) {
+                }
+                lock.unlock();
             }
-            lock.unlock();
-        }
+        });
     }
 
     // Sends a message to the player

@@ -3,8 +3,11 @@ import java.io.*;
 
 public class GameClient {
     public static void main(String[] args) {
-        if (args.length < 2)
+        if (args.length < 2) {
+            System.out.println("Invalid number of arguments!");
+            System.out.println("Usage: java GameClient <host> <port>");
             return;
+        }
 
         String hostname = args[0];
         int port = Integer.parseInt(args[1]);
@@ -18,9 +21,11 @@ public class GameClient {
                 while (true) {
                     String res = reader.readLine();
                     if (res == null)
-                        continue;
+                        break;
                     if (res.equals("escreve")) {
                         String in = r.readLine();
+                        if (in == null)
+                            return;
                         writer.println(in);
                     } else if (res.equals("ping")) {
                         writer.println("pong");

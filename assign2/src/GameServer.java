@@ -20,119 +20,151 @@ public class GameServer {
     private static int N = 2;
 
     // Adds a player to the queue and starts a game if there are enough players
-    public static void addToQueue(Player p) {
+    public static void addToQueueSimple(Player p) {
         // To ensure that operations on the waiting list are thread-safe, preventing
         // race conditions
         waitingLock.lock();
-        cleanup();
-        // If a player with the same name is already in the queue, the method returns
-        // immediately, avoiding duplicates
-        for (Player waitingP : waiting) {
-            if (waitingP.getName().equals(p.getName()))
-                return;
-        }
-        // If there are enough players in the queue
-        if (waiting.stream().filter(x -> x.deadSince < 0).count() == N - 1) {
-            // Create a gamePlayers list and add all queued players to that list
-            List<Player> gamePlayers = new ArrayList<>();
-            for (Player wPlayer : waiting) {
-                gamePlayers.add(wPlayer);
+        try {
+            // If a player with the same name is already in the queue, the method returns
+            // immediately, avoiding duplicates
+            boolean duplicate = false;
+            for (Player waitingP : waiting) {
+                if (waitingP.getName().equals(p.getName()))
+                    duplicate = true;
             }
-            waiting.removeIf(x -> x.deadSince < 0);
-            gamePlayers.add(p);
-            Game game = new Game(gamePlayers);
-            // Starting a new game
-            Thread.ofVirtual().start(() -> {
-                game.run();
-                for (Player player : gamePlayers) {
-                    addToQueue(player);
-                }
-            });
-        } else {
-            waiting.add(p);
+            if (!duplicate)
+                waiting.add(p);
+
+            matchMackingSimple();
+        } finally {
+            waitingLock.unlock();
         }
-        waitingLock.unlock();
+    }
+
+    private static void matchMackingSimple() {
+        waitingLock.lock();
+        try {
+            cleanup();
+            // If there are enough players in the queue
+            if (waiting.stream().filter(x -> x.deadSince < 0).count() == N) {
+                // Create a gamePlayers list and add all queued players to that list
+                List<Player> gamePlayers = new ArrayList<>();
+                for (Player wPlayer : waiting) {
+                    if (wPlayer.deadSince < 0) {
+                        gamePlayers.add(wPlayer);
+                        wPlayer.isPlaying = true;
+                    }
+                }
+                waiting.removeIf(x -> x.deadSince < 0);
+                Game game = new Game(gamePlayers);
+                // Starting a new game
+                Thread.ofVirtual().start(() -> {
+                    game.run();
+                    savePlayers();
+                    for (Player player : gamePlayers) {
+                        addToQueueSimple(player);
+                    }
+                });
+            }
+        } finally {
+            waitingLock.unlock();
+        }
     }
 
     // Add a player to the queue with ranking-based matchmaking
-    public static void addToQueue2(Player p) {
+    public static void addToQueueRanking(Player p) {
         waitingLock.lock();
-        for (Player waitingP : waiting) {
-            if (waitingP.getName().equals(p.getName()))
-                return;
+        try {
+            for (Player waitingP : waiting) {
+                if (waitingP.getName().equals(p.getName()))
+                    return;
+            }
+            waiting.add(p);
+            p.waitingSince = System.currentTimeMillis();
+        } finally {
+            waitingLock.unlock();
         }
-        waiting.add(p);
-        p.waitingSince = System.currentTimeMillis();
-        waitingLock.unlock();
     }
 
     // Try to pair up players with similar rankings and start new games
-    private static void matchMacking() {
+    private static void matchMackingRanking() {
         waitingLock.lock();
-        cleanup();
-        List<Player> gamePlayers = new ArrayList<>();
-        for (Player first : waiting) {
-            if (first.deadSince > 0)
-                continue;
-            // Clears the gamePlayers list and adds first to that list
-            gamePlayers.clear();
-            gamePlayers.add(first);
-            // Iterates through the queue to find players who are within the rank range
-            for (Player candidate : waiting) {
-                if (candidate.deadSince > 0)
+        try {
+            cleanup();
+            List<Player> gamePlayers = new ArrayList<>();
+            for (Player first : waiting) {
+                if (first.deadSince > 0)
                     continue;
-                if (first == candidate)
-                    continue;
-                if (first.inRange(candidate)) {
-                    gamePlayers.add(candidate);
-                    if (gamePlayers.size() == N) {
-                        break;
+                // Clears the gamePlayers list and adds first to that list
+                gamePlayers.clear();
+                gamePlayers.add(first);
+                // Iterates through the queue to find players who are within the rank range
+                for (Player candidate : waiting) {
+                    if (candidate.deadSince > 0)
+                        continue;
+                    if (first == candidate)
+                        continue;
+                    if (first.inRange(candidate)) {
+                        gamePlayers.add(candidate);
+                        if (gamePlayers.size() == N) {
+                            break;
+                        }
                     }
                 }
-            }
-            // If gamePlayers reaches size N, it stops the loop
-            if (gamePlayers.size() == N) {
-                break;
-            }
-        }
-        if (gamePlayers.size() == N) {
-            // Removes selected players from the waiting list
-            for (Player player : gamePlayers) {
-                waiting.remove(player);
-            }
-            // Match creation and start
-            Game game = new Game(gamePlayers);
-            Thread.ofVirtual().start(() -> {
-                game.run();
-                for (Player player : gamePlayers) {
-                    addToQueue2(player);
+                // If gamePlayers reaches size N, it stops the loop
+                if (gamePlayers.size() == N) {
+                    break;
                 }
-            });
-            matchMacking();
+            }
+            if (gamePlayers.size() == N) {
+                // Removes selected players from the waiting list
+                for (Player player : gamePlayers) {
+                    player.isPlaying = true;
+                    waiting.remove(player);
+                }
+                // Match creation and start
+                Game game = new Game(gamePlayers);
+                Thread.ofVirtual().start(() -> {
+                    game.run();
+                    savePlayers();
+                    for (Player player : gamePlayers) {
+                        addToQueueRanking(player);
+                    }
+                });
+                matchMackingRanking();
+            }
+        } finally {
+            waitingLock.unlock();
         }
-        waitingLock.unlock();
     }
 
     // Removes disconnected players from the queue
     private static void cleanup() {
         waitingLock.lock();
-        List<Player> toDelete = new ArrayList<>();
-        for (Player waitingP : waiting) {
-            if (waitingP.deadSince > 0 && System.currentTimeMillis() - waitingP.deadSince > 60 * 1000) {
-                toDelete.add(waitingP);
+        try {
+            List<Player> toDelete = new ArrayList<>();
+            for (Player waitingP : waiting) {
+                if (waitingP.deadSince > 0 && System.currentTimeMillis() - waitingP.deadSince > 60 * 1000) {
+                    toDelete.add(waitingP);
+                }
             }
+            for (Player waitingP : toDelete) {
+                System.out.println("removing " + waitingP.getName() + " from waiting");
+                waiting.remove(waitingP);
+            }
+        } finally {
+            waitingLock.unlock();
         }
-        for (Player waitingP : toDelete) {
-            System.out.println("removing " + waitingP.getName() + " from waiting");
-            waiting.remove(waitingP);
-        }
-        waitingLock.unlock();
     }
 
     // Starts the server, listens for new connections and authenticates players
     public static void main(String[] args) {
-        if (args.length < 3)
+        if (args.length < 3) {
+            System.out.println("Invalid number of arguments!");
+            System.out.println("Usage: java GameServer <port> <mode> <players/game>");
             return;
+        }
+
         int port = Integer.parseInt(args[0]);
         int mode = Integer.parseInt(args[1]);
         N = Integer.parseInt(args[2]);
@@ -148,6 +180,7 @@ public class GameServer {
         System.out.println("    port: " + port);
         System.out.println("    mode: " + (mode == 0 ? "Simple" : "Ranking"));
         System.out.println("    players/game: " + N);
+        loadPlayers();
         // Matchmaking and Ping Thread
         Thread.ofVirtual().start(() -> {
             while (true) {
@@ -173,7 +206,7 @@ public class GameServer {
                         Thread.sleep(1 * 1000); // sleep for 1 second
                     } catch (InterruptedException e) {
                     }
-                    matchMacking();
+                    matchMackingRanking();
                 }
             });
 
@@ -202,8 +235,11 @@ public class GameServer {
                             socket.close();
                         } catch (IOException e) {
                         }
+                        System.out.println("invalid");
+
                         return;
                     }
+                    System.out.println("pass: " + username + " " + password);
                     // Uses a lock to ensure that the player lists and queue are accessed safely
                     // between threads
                     try {
@@ -218,14 +254,14 @@ public class GameServer {
                                     existing.connect(socket);
                                     if (!existing.isPlaying) {
                                         if (mode == 0)
-                                            addToQueue(existing);
+                                            addToQueueSimple(existing);
                                         else
-                                            addToQueue2(existing);
+                                            addToQueueRanking(existing);
                                     }
                                 }
                                 // If the password is incorrect, it sends an error message and closes the socket
                                 else {
-                                    existing.writeLine("PASSWORD ERRADA");
+                                    p.writeLine("PASSWORD ERRADA");
                                     socket.close();
                                 }
                                 break;
@@ -235,14 +271,12 @@ public class GameServer {
                         if (!exists) {
                             p.username = username;
                             p.password = password;
-                            // if (p.username.equals("2")) {
-                            // p.ranking = 580;
-                            // }
                             players.add(p);
+                            savePlayers();
                             if (mode == 0)
-                                addToQueue(p);
+                                addToQueueSimple(p);
                             else
-                                addToQueue2(p);
+                                addToQueueRanking(p);
                         }
                     } catch (IOException e) {
                     } finally {
@@ -257,4 +291,44 @@ public class GameServer {
         }
     }
 
+    private static void savePlayers() {
+        playersLock.lock();
+        try (
+                FileWriter file = new FileWriter("players.txt");
+                var writer = new BufferedWriter(file)) {
+            for (Player p : players) {
+                System.out.println("Saving player: " + p.username + " " + p.ranking);
+                writer.write(p.username);
+                writer.write('\n');
+                writer.write(p.password);
+                writer.write('\n');
+                writer.write("" + p.ranking);
+                writer.write('\n');
+                writer.write('\n');
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            playersLock.unlock();
+        }
+    }
+
+    private static void loadPlayers() {
+        try (FileReader file = new FileReader("players.txt")) {
+            var reader = new BufferedReader(file);
+            while (true) {
+                Player p = new Player();
+                p.username = reader.readLine();
+                if (p.username == null)
+                    return;
+                p.password = reader.readLine();
+                p.ranking = Integer.parseInt(reader.readLine());
+                reader.readLine();
+                System.out.println("Loading player: " + p.username + " " + p.ranking);
+                players.add(p);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
