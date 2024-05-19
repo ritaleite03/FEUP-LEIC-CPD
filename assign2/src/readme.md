@@ -2,9 +2,9 @@
 
 Made by:
 
--   José Ribeiro
--   Rita Leite
--   Tiago Azevedo
+- José Ribeiro
+- Rita Leite
+- Tiago Azevedo
 
 ## 1 - Description
 
@@ -47,6 +47,10 @@ java GameServer <port> <mode> <players/game>
 ```
 
 ## 4 - Fault Tolerance
+
+On the client side, if he is playing and disconnects halfway through, he can connect again, joining the same game if it has not finished in the meantime. If he has disconnected while on the waiting list to join a new game, then he will have 60 seconds to log back in, until he loses his position in the queue.
+
+It is also important to highlight that, to ensure that there are no games where all players are disconnected, a game ends when no player responds.
 
 ## 5 - Concurrency
 
