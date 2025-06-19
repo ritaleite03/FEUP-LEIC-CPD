@@ -1,9 +1,18 @@
 # CPD Projects
 
-CPD Projects of group T02G16;.
+**Parallel and Distributed Computing** is a course offered in the second semester of the third year of the LEIC Bachelor's program at the Faculty of Engineering, University of Porto.
 
-Group members:
+## Grades
 
-1. José Ribeiro (up202108868@fe.up.pt)
-2. Rita Leite (up202105309@fe.up.pt)
-3. Tiago Azevedo (up202108699@fe.up.pt)
+| Project  | Final |
+| -------- | ----- |
+| Assign 1 | 16.40 |
+| Assign 2 | 16.35 |
+
+## Contributors
+
+| Name          | GitHub Username                                          |
+| ------------- | -------------------------------------------------------- |
+| José Ribeiro  | [@tonder0812](https://github.com/tonder0812)             |
+| Rita Leite    | [@ritaleite03](https://github.com/ritaleite03)           |
+| Tiago Azevedo | [@TiagoAzevedo1903](https://github.com/TiagoAzevedo1903) |
