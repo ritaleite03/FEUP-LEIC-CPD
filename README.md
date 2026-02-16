@@ -13,6 +13,8 @@
 
 ## Overview
 
+**Parallel and Distributed Computing** is a course offered in the second semester of the third year of the LEIC Bachelor's program at the Faculty of Engineering, University of Porto.
+
 This repository contains **two independent projects**:
 
 1. **Multiplication Analysis**  
