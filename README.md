@@ -15,9 +15,9 @@
 
 Repository for the **Computação Paralela e Distribuída (Parallel and Distributed Computing)** course projects from LEIC - FEUP.
 
-| Project | Description | Folder |
-| ------- | ----------- | ------ |
-| **Multiplication Analysis** | Performance analysis of different multiplication algorithms: normal, linear, block, and parallel. Focus on **algorithmic efficiency**. Implemented in **C++** and **Java**. | `assign1/` |
+| Project                           | Description                                                                                                                                                                                                                                | Folder     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| **Multiplication Analysis**       | Performance analysis of different multiplication algorithms: normal, linear, block, and parallel. Focus on **algorithmic efficiency**. Implemented in **C++** and **Java**.                                                                | `assign1/` |
 | **Hangman Game with Concurrency** | Simplified Hangman with **concurrent multiplayer support**, **user authentication**, **ranking system**, and **points system** (+30 win / -10 loss). Designed for **fault tolerance** in concurrent environments. Implemented in **Java**. | `assign2/` |
 
 ## 🏆 Grades
@@ -27,9 +27,7 @@ Repository for the **Computação Paralela e Distribuída (Parallel and Distribu
 | Assign 1 | 16.40 |
 | Assign 2 | 16.35 |
 
-<!--
 ## ⚡ Quick Links
 
 - [Project 1 README – Multiplication Analysis](assign1/README.md)
 - [Project 2 README – Hangman Game with Concurrency](assign2/README.md)
--->
