@@ -30,4 +30,4 @@ Repository for the **Computação Paralela e Distribuída (Parallel and Distribu
 ## ⚡ Quick Links
 
 - [Project 1 README – Multiplication Analysis](assign1/README.md)
-- [Project 2 README – Hangman Game with Concurrency](assign2/README.md)
+- [Project 2 README – Hangman Game with Concurrency](assign2/readme.md)
